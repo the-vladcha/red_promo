@@ -1,4 +1,7 @@
 from django.db import models
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
+from django.utils import timezone
 
 
 class Reader(models.Model):
@@ -44,9 +47,30 @@ class Item(models.Model):
         verbose_name_plural = 'Товары'
 
 
-# class History(models.Model):
-#     book = models.ForeignKey(Book, on_delete=models.SET_NULL)
-#     reader = models.ForeignKey(Reader, on_delete=models.SET_NULL)
-#     reserved_at = models.DateTimeField(default=timezone.now)
-#     reserved_to = models.DateTimeField(blank=True, null=True)
-#     overdue = models.BooleanField(default=False)
+class History(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.SET_NULL, null=True)
+    reader = models.ForeignKey(Reader, on_delete=models.SET_NULL, null=True)
+    reserved_at = models.DateTimeField(default=timezone.now)
+    reserved_to = models.DateTimeField(blank=True, null=True)
+    overdue = models.BooleanField(default=False)
+
+
+@receiver(post_delete, sender=Item)
+def create_profile(sender: Item, instance: Item, *args, **kwargs) -> None:
+    History.objects.create(
+        book=instance.book,
+        reader=instance.current_reader,
+        reserved_at=instance.reserved_at,
+        reserved_to=timezone.now(),
+    )
+
+
+@receiver(post_save, sender=Item)
+def create_profile(sender: Item, instance: Item, *args, **kwargs) -> None:
+    if instance.status == Item.Status.NOT_RETURNED.value:
+        History.objects.create(
+            book=instance.book,
+            reader=instance.current_reader,
+            reserved_at=instance.reserved_at,
+            overdue=True,
+        )

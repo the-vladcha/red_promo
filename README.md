@@ -3,6 +3,41 @@
 
 ## Запуск сервиса
 
+1) Создать файлы с переменными окружения:
+    
+
+    1) Для разработки:
+    .env
+    SECRET_KEY=django-insecure-1=gwsqy1_c!lg2notjoas8&-r(^-1+*$sj9xbfe*mlt^52kfhc
+    DEBUG=True
+    ALLOWED_HOSTS=
+    
+    POSTGRES_USER=postgres
+    POSTGRES_PASSWORD=12345
+    POSTGRES_DB=library
+    
+    DB_HOST=127.0.0.1
+    DB_PORT=5432
+
+    2) Для контейнеризации:
+    .env.prod
+    SECRET_KEY=django-insecure-1=gwsqy1_c!lg2notjoas8&-r(^-1+*$sj9xbfe*mlt^52kfhc
+    DEBUG=True
+    ALLOWED_HOSTS=localhost 127.0.0.1 0.0.0.0
+    DB_HOST=db
+    DB_PORT=5432
+    REDIS_HOST=redis
+    REDIS_PORT=6379
+
+    .env.db
+    POSTGRES_USER=library_user
+    POSTGRES_PASSWORD=library
+    POSTGRES_DB=library
+    
+
+2) Запустить docker-compose
+    
+
     docker-compose up
 
 

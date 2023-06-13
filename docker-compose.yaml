@@ -12,6 +12,7 @@ services:
       - ./src/data:/code/data
     env_file:
       - ./.env.prod
+      - ./.env.db
     depends_on:
       - db
 
@@ -29,6 +30,7 @@ services:
     command: celery -A app worker -l info
     env_file:
       - ./.env.prod
+      - ./.env.db
     depends_on:
       - redis
 
@@ -42,6 +44,7 @@ services:
     command: celery -A app beat -l info
     env_file:
       - ./.env.prod
+      - ./.env.db
     depends_on:
       - celery_worker
 

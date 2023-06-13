@@ -5,7 +5,7 @@
 
 1) Создать файлы с переменными окружения:
     
-
+```
     1) Для разработки:
     .env
     SECRET_KEY=django-insecure-1=gwsqy1_c!lg2notjoas8&-r(^-1+*$sj9xbfe*mlt^52kfhc
@@ -33,13 +33,13 @@
     POSTGRES_USER=library_user
     POSTGRES_PASSWORD=library
     POSTGRES_DB=library
-    
+```
 
 2) Запустить docker-compose
     
-
+```
     docker-compose up
-
+```
 
 # REST API
 

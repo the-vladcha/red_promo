@@ -1,17 +1,17 @@
 import csv
+from pathlib import Path
 
-from django.db.models import Count
+from django.db.models import Count, QuerySet
 from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework import viewsets, mixins, views, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from app.settings import BASE_DIR
-from library.api.serializers import ReaderSerializer, BookSerializer, ItemSerializer, DataImportSerializer
-from library.models import Reader, Book, Item
+from app.settings import BOOKS_PATH
+from library.api.serializers import ReaderSerializer, BookSerializer, ItemSerializer
+from library.models import Reader, Book, Item, History
 from library.tasks import import_csv
-
-from src.library.models import History
 
 
 class ReaderViewSet(mixins.ListModelMixin,
@@ -21,12 +21,16 @@ class ReaderViewSet(mixins.ListModelMixin,
     queryset = Reader.objects.all()
 
 
-class BookViewSet(viewsets.ReadOnlyModelViewSet):
+class BookViewSet(mixins.ListModelMixin,
+                  viewsets.GenericViewSet):
     serializer_class = BookSerializer
     queryset = Book.objects.all()
 
 
-class ItemViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+class ItemViewSet(mixins.CreateModelMixin,
+                  mixins.DestroyModelMixin,
+                  mixins.ListModelMixin,
+                  viewsets.GenericViewSet):
     serializer_class = ItemSerializer
     queryset = Item.objects.all()
 
@@ -43,30 +47,29 @@ class ItemViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 class ImportDataApiView(views.APIView):
 
-    def post(self, request: Request):
-        import_csv.delay(request.data.get("filename"))
-        # serializer = DataImportSerializer(data=request.data)
-        # print(serializer)
-        # serializer.is_valid(raise_exception=True)
-        # print(serializer.data)
-        # Book.import_data(data=open(filename))
-        # import_csv.delay(filename)
-        return Response({}, status=status.HTTP_201_CREATED)
+    def post(self, request: Request) -> Response:
+        filename: str | None = request.data.get("filename")
+        if filename and filename.endswith('.csv') and Path(BOOKS_PATH, filename).exists():
+            import_csv.delay(request.data.get("filename"))
+            return Response({}, status=status.HTTP_201_CREATED)
+        return Response({"error": "Bad filename"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ExportReportApiView(views.APIView):
 
     def get(self, request: Request, *args, **kwargs) -> HttpResponse:
         response: HttpResponse = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="export.csv"'
-
-        writer = csv.writer(response)
-        writer.writerow(';'.join(('reader', 'number_of_books_read')))
-        for reader_static in History.objects.values('reader').annotate(rcount=Count('reader')).order_by('reader'):
-            row: str = ';'.join([
-                reader_static.reader.full_name,
-                reader_static.rcount,
-            ])
+        response['Content-Disposition'] = 'attachment; filename="reader_report.csv"'
+        writer = csv.writer(response, delimiter=';')
+        writer.writerow(['reader', 'number_of_books_read'])
+        reader_statistics: QuerySet = History.objects \
+            .filter(reserved_at__gte=timezone.now() - timezone.timedelta(days=30)) \
+            .values('reader').annotate(rcount=Count('reader')).order_by('reader')
+        for reader_statistic in reader_statistics:
+            row: list = [
+                Reader.objects.get(pk=reader_statistic.get('reader')).full_name,
+                str(reader_statistic.get('rcount')),
+            ]
             writer.writerow(row)
 
         return response

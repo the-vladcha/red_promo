@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from rest_framework import serializers
 
+from app.settings import MAX_RESERVE_DAYS
 from library.models import Reader, Book, Item
 
 
@@ -20,7 +21,7 @@ class BookSerializer(serializers.ModelSerializer):
         if self.get_in_stock_count(obj) == 0:
             latest_item: Item = obj.book_items.filter(status=Item.Status.RESERVED.value).latest("reserved_at")
             if latest_item:
-                return latest_item.reserved_at + timedelta(days=14)
+                return latest_item.reserved_at + timedelta(days=MAX_RESERVE_DAYS)
         return None
 
 
@@ -33,8 +34,5 @@ class ReaderSerializer(serializers.ModelSerializer):
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = ('book', 'current_reader', 'status')
-
-
-class DataImportSerializer(serializers.Serializer):
-    filename = serializers.FilePathField(path='data', match=r".*\.csv$")
+        fields = ('id', 'book', 'current_reader', 'status')
+        read_only_fields = ('status',)

@@ -14,7 +14,6 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     'update-item-status-every-day': {
         'task': 'library.tasks.update_item_status',
-        # 'schedule': crontab(minute="0", hour="2"),
-        'schedule': 30.0,
+        'schedule': crontab(minute="0", hour="2"),
     },
 }

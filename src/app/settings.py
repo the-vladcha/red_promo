@@ -93,18 +93,6 @@ DATABASES = {
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    # {
-    #     'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    # },
-    # {
-    #     'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    # },
-    # {
-    #     'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    # },
-    # {
-    #     'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    # },
 ]
 
 # Internationalization
@@ -131,8 +119,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REDIS_HOST = os.environ.get('REDIS_HOST', '127.0.0.1')
 REDIS_PORT = os.environ.get('REDIS_PORT', '6379')
 
-# CELERY_TIMEZONE = "Australia/Tasmania"
-# CELERY_TASK_TRACK_STARTED = True
-# CELERY_TASK_TIME_LIMIT = 30 * 60
 CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
-# CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}"
+CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}"
+
+BOOKS_PATH = Path(BASE_DIR, 'data')
+
+MAX_RESERVE_DAYS = 14

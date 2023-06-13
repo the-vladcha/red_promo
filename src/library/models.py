@@ -11,7 +11,11 @@ class Reader(models.Model):
     passport_number = models.CharField(max_length=10, unique=True)
 
     def __str__(self):
-        return f'{self.first_name}, {self.last_name}'
+        return self.full_name
+
+    @property
+    def full_name(self) -> str:
+        return ' '.join((self.last_name, self.first_name, self.middle_name))
 
     class Meta:
         verbose_name = 'Читатель'

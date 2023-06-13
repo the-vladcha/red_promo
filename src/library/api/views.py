@@ -1,3 +1,7 @@
+import csv
+
+from django.db.models import Count
+from django.http import HttpResponse
 from rest_framework import viewsets, mixins, views, status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -6,6 +10,8 @@ from app.settings import BASE_DIR
 from library.api.serializers import ReaderSerializer, BookSerializer, ItemSerializer, DataImportSerializer
 from library.models import Reader, Book, Item
 from library.tasks import import_csv
+
+from src.library.models import History
 
 
 class ReaderViewSet(mixins.ListModelMixin,
@@ -46,3 +52,21 @@ class ImportDataApiView(views.APIView):
         # Book.import_data(data=open(filename))
         # import_csv.delay(filename)
         return Response({}, status=status.HTTP_201_CREATED)
+
+
+class ExportReportApiView(views.APIView):
+
+    def get(self, request: Request, *args, **kwargs) -> HttpResponse:
+        response: HttpResponse = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="export.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(';'.join(('reader', 'number_of_books_read')))
+        for reader_static in History.objects.values('reader').annotate(rcount=Count('reader')).order_by('reader'):
+            row: str = ';'.join([
+                reader_static.reader.full_name,
+                reader_static.rcount,
+            ])
+            writer.writerow(row)
+
+        return response

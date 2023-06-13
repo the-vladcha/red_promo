@@ -8,6 +8,8 @@ services:
     command: /bin/sh -c "python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
+    volumes:
+      - ./src/data:/code/data
     env_file:
       - ./.env.prod
     depends_on:
@@ -23,8 +25,10 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./:/code
+      - celery_volume:/code
     command: celery -A app worker -l info
+    env_file:
+      - ./.env.prod
     depends_on:
       - redis
 
@@ -34,8 +38,10 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./:/code
+      - celery_volume:/code
     command: celery -A app beat -l info
+    env_file:
+      - ./.env.prod
     depends_on:
       - celery_worker
 
@@ -52,3 +58,4 @@ services:
 
 volumes:
   pgdata:
+  celery_volume: {}

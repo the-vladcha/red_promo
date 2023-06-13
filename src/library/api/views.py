@@ -25,11 +25,14 @@ class ItemViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Item.objects.all()
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        book: Book = serializer.validated_data['book']
+        if book.amount - Item.objects.filter(book=serializer.validated_data['book']).count() > 0:
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response({"content": "The book is out of stock"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ImportDataApiView(views.APIView):
